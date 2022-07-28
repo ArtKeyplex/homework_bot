@@ -51,8 +51,7 @@ def get_api_answer(current_timestamp):
     """
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
-    homework_status = requests.get(ENDPOINT, headers=HEADERS,
-                                       params=params)
+    homework_status = requests.get(ENDPOINT, headers=HEADERS, params=params)
     if homework_status.status_code != HTTPStatus.OK:
         status_code = homework_status.status_code
         logging.error(f'Ошибка {status_code}')
