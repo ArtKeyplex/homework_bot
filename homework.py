@@ -2,7 +2,6 @@ import logging
 import os
 import time
 from http import HTTPStatus
-from logging.handlers import RotatingFileHandler
 from exceptions import ApiException, NotKnownException, TokenException
 
 import requests
@@ -101,7 +100,7 @@ def check_tokens():
         return True
 
 
-def main():
+def main(): # noqa
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
