@@ -51,6 +51,7 @@ def send_message(bot, message):
     TELEGRAM_CHAT_ID. Принимает на вход два параметра: экземпляр класса Bot
     и строку с текстом сообщения.
     """
+
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.info('Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
