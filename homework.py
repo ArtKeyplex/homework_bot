@@ -13,7 +13,6 @@ logging.basicConfig(
     level=logging.DEBUG,
     filename='main.log',
     format='%(funcName)s, %(lineno)s, %(levelname)s, %(message)s',
-    encoding='UTF-8',
     filemode='w'
 )
 logger = logging.getLogger(__name__)
