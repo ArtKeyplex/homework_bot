@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 import telegram
 from http import HTTPStatus
 
-load_dotenv()
-secret_token = os.getenv('TOKEN')
 logging.basicConfig(
     level=logging.DEBUG,
     filename='main.log',
@@ -28,10 +26,10 @@ formatter = logging.Formatter(
 )
 handler.setFormatter(formatter)
 
-
-PRACTICUM_TOKEN = 'AQAAAAAWe5TJAAYckV9qzB0DE0OVkaMYYkpBOSs'
-TELEGRAM_TOKEN = secret_token
-TELEGRAM_CHAT_ID = 1289576953
+load_dotenv()
+PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
+TELEGRAM_TOKEN = os.getenv('TOKEN')
+TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
