@@ -4,3 +4,7 @@ class ApiException(Exception):
 
 class TokenException(Exception):
     pass
+
+
+class NotKnownException(Exception):
+    pass

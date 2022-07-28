@@ -2,7 +2,7 @@ import logging
 import os
 import time
 from http import HTTPStatus
-from exceptions import ApiException, TokenException
+from exceptions import ApiException, NotKnownException, TokenException
 
 import requests
 import telegram
