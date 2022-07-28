@@ -52,7 +52,6 @@ def send_message(bot, message):
     Принимает на вход два параметра: экземпляр класса Bot и
     строку с текстом сообщения.
     """
-
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.info('Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
@@ -66,7 +65,6 @@ def get_api_answer(current_timestamp):
     В случае успешного запроса должна вернуть ответ API,
     преобразовав его из формата JSON к типам данных Python.
     """
-
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
@@ -94,7 +92,6 @@ def check_response(response):
     список домашних работ (он может быть пустым), доступный в ответе
     API по ключу 'homeworks'
     """
-
     if type(response) is not dict:
         raise TypeError('Ответ API отличен от словаря')
     try:
@@ -116,7 +113,6 @@ def parse_status(homework):
     работ. В случае успеха, функция возвращает подготовленную для отправки в
     Telegram строку, содержащую один из вердиктов словаря HOMEWORK_STATUSES.
     """
-
     if 'homework_name' not in homework:
         raise KeyError('Отсутсвует ключ "homework_name" в ответе API')
     if 'status' not in homework:
