@@ -5,5 +5,6 @@ class ApiException(Exception):
 class NotKnownException(Exception):
     pass
 
+
 class TokenException(Exception):
     pass
