@@ -6,7 +6,7 @@ from http import HTTPStatus
 
 import requests
 import telegram
-import tg_logger
+import tg_logger # noqa
 from dotenv import load_dotenv
 
 from exceptions import ApiException, BotException, NotKnownException
