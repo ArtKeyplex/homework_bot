@@ -6,7 +6,6 @@ from http import HTTPStatus
 
 import requests
 import telegram
-import tg_logger
 from dotenv import load_dotenv
 
 from exceptions import ApiException, BotException, NotKnownException
@@ -23,8 +22,7 @@ load_dotenv()
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
-logger = logging.getLogger('logger')
-tg_logger.setup(logger, token=TELEGRAM_TOKEN, users=[int(TELEGRAM_CHAT_ID)])
+
 
 RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
@@ -124,31 +122,31 @@ def main(): # noqa
     current_timestamp = int(time.time())
     status = ''
     if not check_tokens():
-        logger.critical('Отсутствуют одна или несколько переменных окружения')
+        logging.critical('Отсутствуют одна или несколько переменных окружения')
         sys.exit()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     while True:
         try:
             response = get_api_answer(current_timestamp)
         except ApiException as error:
-            logger.error(f'Ошибка при запросе к основному API: {error}')
+            logging.error(f'Ошибка при запросе к основному API: {error}')
         except ValueError:
-            logger.error('Ошибка парсинга ответа из формата json')
+            logging.error('Ошибка парсинга ответа из формата json')
         except NotKnownException:
-            logger.error(f'Ошибка {NotKnownException}')
+            logging.error(f'Ошибка {NotKnownException}')
         current_timestamp = response.get('current_date')
         try:
             message = parse_status(check_response(response))
         except KeyError:
-            logger.error('Ошибка словаря по ключу homeworks')
+            logging.error('Ошибка словаря по ключу homeworks')
         except IndexError:
-            logger.error('Список домашних работ пуст')
+            logging.error('Список домашних работ пуст')
         if message != status:
             try:
-                logger.info(f'Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
+                logging.info(f'Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
                 send_message(bot, message)
             except BotException:
-                logger.error('Ошибка отправки сообщения в телеграм')
+                logging.error('Ошибка отправки сообщения в телеграм')
             finally:
                 time.sleep(RETRY_TIME)
 
