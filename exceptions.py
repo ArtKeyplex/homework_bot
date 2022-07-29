@@ -8,3 +8,7 @@ class TokenException(Exception):
 
 class NotKnownException(Exception):
     pass
+
+
+class BotException(Exception):
+    pass

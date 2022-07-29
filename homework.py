@@ -1,12 +1,16 @@
 import logging
 import os
+import sys
 import time
 from http import HTTPStatus
-from exceptions import ApiException, NotKnownException, TokenException
 
 import requests
 import telegram
+import tg_logger
 from dotenv import load_dotenv
+
+from exceptions import ApiException, BotException, NotKnownException
+
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -19,6 +23,8 @@ load_dotenv()
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+logger = logging.getLogger('logger')
+tg_logger.setup(logger, token=TELEGRAM_TOKEN, users=[int(TELEGRAM_CHAT_ID)])
 
 RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
@@ -38,8 +44,10 @@ def send_message(bot, message):
     Принимает на вход два параметра: экземпляр класса Bot и
     строку с текстом сообщения.
     """
-    logging.info(f'Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
-    bot.send_message(TELEGRAM_CHAT_ID, message)
+    try:
+        bot.send_message(TELEGRAM_CHAT_ID, message)
+    except BotException:
+        raise BotException('Ошибка отправки сообщения в телеграм')
 
 
 def get_api_answer(current_timestamp):
@@ -50,12 +58,18 @@ def get_api_answer(current_timestamp):
     """
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
-    homework_status = requests.get(ENDPOINT, headers=HEADERS, params=params)
+    try:
+        homework_status = requests.get(ENDPOINT, headers=HEADERS,
+                                       params=params)
+    except ApiException as error:
+        raise ApiException(f'Ошибка при запросе к основному API: {error}')
     if homework_status.status_code != HTTPStatus.OK:
         status_code = homework_status.status_code
-        logging.error(f'Ошибка {status_code}')
         raise Exception(f'Ошибка {status_code}')
-    return homework_status.json()
+    try:
+        return homework_status.json()
+    except ValueError:
+        raise ValueError('Ошибка парсинга ответа из формата json')
 
 
 def check_response(response):
@@ -68,8 +82,14 @@ def check_response(response):
     """
     if type(response) is not dict:
         raise TypeError('Ответ API отличен от словаря')
-    list_works = response['homeworks']
-    homework = list_works[0]
+    try:
+        list_works = response['homeworks']
+    except KeyError:
+        raise KeyError('Ошибка словаря по ключу homeworks')
+    try:
+        homework = list_works[0]
+    except IndexError:
+        raise IndexError('Список домашних работ пуст')
     return homework
 
 
@@ -95,56 +115,42 @@ def check_tokens():
     """Проверяет доступность переменных окружения, необходимых для работы.
     Если отсутствует хотя бы одна переменная окружения — функция должна
     вернуть False, иначе — True.
-    """
-    if all([TELEGRAM_TOKEN and PRACTICUM_TOKEN and TELEGRAM_CHAT_ID]):
-        return True
 
+    """
+    return all([TELEGRAM_TOKEN and PRACTICUM_TOKEN and TELEGRAM_CHAT_ID])
 
 def main(): # noqa
     """Основная логика работы бота."""
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     status = ''
-    error_cache_message = ''
     if not check_tokens():
-        logging.critical('Отсутствуют одна или несколько переменных окружения')
-        raise TokenException(
-            'Отсутствуют одна или несколько переменных окружения')
+        logger.critical('Отсутствуют одна или несколько переменных окружения')
+        sys.exit()
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
     while True:
         try:
+            response = get_api_answer(current_timestamp)
+        except ApiException as error:
+            logger.error(f'Ошибка при запросе к основному API: {error}')
+        except ValueError:
+            logger.error('Ошибка парсинга ответа из формата json')
+        except NotKnownException:
+            logger.error(f'Ошибка {NotKnownException}')
+        current_timestamp = response.get('current_date')
+        try:
+            message = parse_status(check_response(response))
+        except KeyError:
+            logger.error('Ошибка словаря по ключу homeworks')
+        except IndexError:
+            logger.error('Список домашних работ пуст')
+        if message != status:
             try:
-                response = get_api_answer(current_timestamp)
-            except ApiException as error:
-                logging.error(f'Ошибка при запросе к основному API: {error}')
-                raise ApiException(
-                    f'Ошибка при запросе к основному API: {error}')
-            except ValueError:
-                logging.error('Ошибка парсинга ответа из формата json')
-                raise ValueError('Ошибка парсинга ответа из формата json')
-
-            current_timestamp = response.get('current_date')
-            try:
-                message = parse_status(check_response(response))
-            except KeyError:
-                logging.error('Ошибка словаря по ключу homeworks')
-                raise KeyError('Ошибка словаря по ключу homeworks')
-            except IndexError:
-                logging.error('Список домашних работ пуст')
-                raise IndexError('Список домашних работ пуст')
-            if message != status:
-                try:
-                    send_message(bot, message)
-                except telegram.error.TelegramError:
-                    logging.error('Ошибка отправки сообщения в телеграм')
-            time.sleep(RETRY_TIME)
-        except NotKnownException as error:
-            logging.error(error)
-            message = f'Сбой в работе программы: {error}'
-            if message != error_cache_message:
+                logger.info(f'Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
                 send_message(bot, message)
-                error_cache_message = message
-        finally:
-            time.sleep(RETRY_TIME)
+            except BotException:
+                logger.error('Ошибка отправки сообщения в телеграм')
+            finally:
+                time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
