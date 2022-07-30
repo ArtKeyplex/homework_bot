@@ -82,7 +82,7 @@ def check_response(response):
     список домашних работ (он может быть пустым), доступный в ответе
     API по ключу 'homeworks'
     """
-    if isinstance(response, dict):
+    if not isinstance(response, dict):
         raise TypeError('Ответ API отличен от словаря')
     try:
         list_works = response['homeworks']
