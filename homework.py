@@ -9,7 +9,8 @@ import telegram
 import tg_logger
 from dotenv import load_dotenv
 
-from exceptions import ApiException, BotException, NotKnownException
+from exceptions import (ApiException, BotException, NotKnownException,
+                        StatusException)
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -81,7 +82,7 @@ def check_response(response):
     список домашних работ (он может быть пустым), доступный в ответе
     API по ключу 'homeworks'
     """
-    if type(response) is not dict:
+    if isinstance(response, dict):
         raise TypeError('Ответ API отличен от словаря')
     try:
         list_works = response['homeworks']
@@ -107,7 +108,7 @@ def parse_status(homework):
     homework_name = homework['homework_name']
     homework_status = homework['status']
     if homework_status not in HOMEWORK_STATUSES:
-        raise Exception(f'Неизвестный статус работы: {homework_status}')
+        raise StatusException(f'Неизвестный статус работы: {homework_status}')
     verdict = HOMEWORK_STATUSES[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
@@ -144,6 +145,8 @@ def main(): # noqa
             logger.error('Ошибка словаря по ключу homeworks')
         except IndexError:
             logger.error('Список домашних работ пуст')
+        except StatusException:
+            logger.error(f'Статус работы: {StatusException}')
         if message != status:
             try:
                 logger.info(f'Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')

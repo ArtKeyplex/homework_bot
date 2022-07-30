@@ -12,3 +12,7 @@ class NotKnownException(Exception):
 
 class BotException(Exception):
     pass
+
+
+class StatusException(Exception):
+    pass
