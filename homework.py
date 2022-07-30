@@ -6,10 +6,10 @@ from http import HTTPStatus
 
 import requests
 import telegram
+import tg_logger
 from dotenv import load_dotenv
 
 from exceptions import ApiException, BotException, NotKnownException
-
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -23,6 +23,9 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
+logger = logging.getLogger('logger')
+logger.setLevel(logging.INFO)
+tg_logger.setup(logger, token=TELEGRAM_TOKEN, users=TELEGRAM_CHAT_ID)
 
 RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
@@ -73,7 +76,7 @@ def get_api_answer(current_timestamp):
 def check_response(response):
     """Проверяет ответ API на корректность.
     В качестве параметра функция получает ответ API.
-    Ответ приведен к типам данных Python.
+    Ответ приведен к типам данных Python.-
     Если ответ API соответствует ожиданиям, то функция должна вернуть
     список домашних работ (он может быть пустым), доступный в ответе
     API по ключу 'homeworks'
@@ -122,31 +125,31 @@ def main(): # noqa
     current_timestamp = int(time.time())
     status = ''
     if not check_tokens():
-        logging.critical('Отсутствуют одна или несколько переменных окружения')
+        logger.critical('Отсутствуют одна или несколько переменных окружения')
         sys.exit()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     while True:
         try:
             response = get_api_answer(current_timestamp)
         except ApiException as error:
-            logging.error(f'Ошибка при запросе к основному API: {error}')
+            logger.error(f'Ошибка при запросе к основному API: {error}')
         except ValueError:
-            logging.error('Ошибка парсинга ответа из формата json')
+            logger.error('Ошибка парсинга ответа из формата json')
         except NotKnownException:
-            logging.error(f'Ошибка {NotKnownException}')
+            logger.error(f'Ошибка {NotKnownException}')
         current_timestamp = response.get('current_date')
         try:
             message = parse_status(check_response(response))
         except KeyError:
-            logging.error('Ошибка словаря по ключу homeworks')
+            logger.error('Ошибка словаря по ключу homeworks')
         except IndexError:
-            logging.error('Список домашних работ пуст')
+            logger.error('Список домашних работ пуст')
         if message != status:
             try:
-                logging.info(f'Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
+                logger.info(f'Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
                 send_message(bot, message)
             except BotException:
-                logging.error('Ошибка отправки сообщения в телеграм')
+                logger.error('Ошибка отправки сообщения в телеграм')
             finally:
                 time.sleep(RETRY_TIME)
 
