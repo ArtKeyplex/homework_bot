@@ -5,8 +5,6 @@ import time
 from http import HTTPStatus
 
 import requests
-import telegram
-import tg_logger
 from dotenv import load_dotenv
 
 from exceptions import (ApiException, BotException, NotKnownException,
@@ -24,9 +22,6 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-logger = logging.getLogger('logger')
-logger.setLevel(logging.INFO)
-tg_logger.setup(logger, token=TELEGRAM_TOKEN, users=TELEGRAM_CHAT_ID)
 
 RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
@@ -61,15 +56,14 @@ def get_api_answer(current_timestamp):
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
-        homework_status = requests.get(ENDPOINT, headers=HEADERS,
+        response = requests.get(ENDPOINT, headers=HEADERS,
                                        params=params)
     except ApiException as error:
         raise ApiException(f'Ошибка при запросе к основному API: {error}')
-    if homework_status.status_code != HTTPStatus.OK:
-        status_code = homework_status.status_code
-        raise Exception(f'Ошибка {status_code}')
+    if response.status_code != HTTPStatus.OK:
+        raise Exception(f'Ошибка {response.status_code}')
     try:
-        return homework_status.json()
+        return response.json()
     except ValueError:
         raise ValueError('Ошибка парсинга ответа из формата json')
 
@@ -121,7 +115,8 @@ def check_tokens():
     """
     return all([TELEGRAM_TOKEN and PRACTICUM_TOKEN and TELEGRAM_CHAT_ID])
 
-def main(): # noqa
+
+def main():  # noqa
     """Основная логика работы бота."""
     current_timestamp = int(time.time())
     status = ''
@@ -132,29 +127,34 @@ def main(): # noqa
     while True:
         try:
             response = get_api_answer(current_timestamp)
-        except ApiException as error:
-            logger.error(f'Ошибка при запросе к основному API: {error}')
-        except ValueError:
-            logger.error('Ошибка парсинга ответа из формата json')
-        except NotKnownException:
-            logger.error(f'Ошибка {NotKnownException}')
-        current_timestamp = response.get('current_date')
-        try:
+            current_timestamp = response.get('current_date')
             message = parse_status(check_response(response))
-        except KeyError:
-            logger.error('Ошибка словаря по ключу homeworks')
-        except IndexError:
-            logger.error('Список домашних работ пуст')
-        except StatusException:
-            logger.error(f'Статус работы: {StatusException}')
-        if message != status:
-            try:
-                logger.info(f'Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
+            if message != status:
+                logging.info(f'Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
                 send_message(bot, message)
-            except BotException:
-                logger.error('Ошибка отправки сообщения в телеграм')
-            finally:
-                time.sleep(RETRY_TIME)
+        except BotException:
+            logging.error(f'Ошибка отправки сообщения в телеграм')
+            send_message(bot, f'Ошибка отправки сообщения в телеграм')
+        except ApiException as error:
+            logging.error(f'Ошибка при запросе к основному API: {error}')
+            send_message(bot, f'Ошибка при запросе к основному API: {error}')
+        except ValueError:
+            logging.error('Ошибка парсинга ответа из формата json')
+            send_message(bot, 'Ошибка парсинга ответа из формата json')
+        except NotKnownException:
+            logging.error(f'Ошибка {NotKnownException}')
+            send_message(bot, f'Ошибка {NotKnownException}')
+        except KeyError:
+            logging.error('Ошибка словаря по ключу homeworks')
+            send_message(bot, 'Ошибка словаря по ключу homeworks')
+        except IndexError:
+            logging.error('Список домашних работ пуст')
+            send_message(bot, 'Список домашних работ пуст')
+        except StatusException:
+            logging.error(f'Статус работы: {StatusException}')
+            send_message(bot, f'Статус работы: {StatusException}')
+        finally:
+            time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
