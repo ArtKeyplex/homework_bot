@@ -134,7 +134,6 @@ def main():  # noqa
                 send_message(bot, message)
         except BotException:
             logging.error('Ошибка отправки сообщения в телеграм')
-            send_message(bot, 'Ошибка отправки сообщения в телеграм')
         except ApiException as error:
             logging.error(f'Ошибка при запросе к основному API: {error}')
             send_message(bot, f'Ошибка при запросе к основному API: {error}')
