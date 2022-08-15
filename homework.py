@@ -5,6 +5,7 @@ import time
 from http import HTTPStatus
 
 import requests
+import telegram
 from dotenv import load_dotenv
 
 from exceptions import (ApiException, BotException, NotKnownException,
@@ -56,8 +57,7 @@ def get_api_answer(current_timestamp):
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
-        response = requests.get(ENDPOINT, headers=HEADERS,
-                                       params=params)
+        response = requests.get(ENDPOINT, headers=HEADERS, params=params)
     except ApiException as error:
         raise ApiException(f'Ошибка при запросе к основному API: {error}')
     if response.status_code != HTTPStatus.OK:
@@ -121,7 +121,7 @@ def main():  # noqa
     current_timestamp = int(time.time())
     status = ''
     if not check_tokens():
-        logger.critical('Отсутствуют одна или несколько переменных окружения')
+        logging.critical('Отсутствуют одна или несколько переменных окружения')
         sys.exit()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     while True:
