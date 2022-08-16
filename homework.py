@@ -44,7 +44,7 @@ def send_message(bot, message):
     """
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-    except BotException:
+    except telegram.error.TelegramError:
         raise BotException('Ошибка отправки сообщения в телеграм')
 
 
@@ -120,6 +120,7 @@ def main():  # noqa
     """Основная логика работы бота."""
     current_timestamp = int(time.time())
     status = ''
+    error_message = ''
     if not check_tokens():
         logging.critical('Отсутствуют одна или несколько переменных окружения')
         sys.exit()
@@ -132,26 +133,26 @@ def main():  # noqa
             if message != status:
                 logging.info(f'Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
                 send_message(bot, message)
-        except BotException:
-            logging.error('Ошибка отправки сообщения в телеграм')
-        except ApiException as error:
-            logging.error(f'Ошибка при запросе к основному API: {error}')
-            send_message(bot, f'Ошибка при запросе к основному API: {error}')
-        except ValueError:
-            logging.error('Ошибка парсинга ответа из формата json')
-            send_message(bot, 'Ошибка парсинга ответа из формата json')
-        except NotKnownException:
-            logging.error(f'Ошибка {NotKnownException}')
-            send_message(bot, f'Ошибка {NotKnownException}')
-        except KeyError:
-            logging.error('Ошибка словаря по ключу homeworks')
-            send_message(bot, 'Ошибка словаря по ключу homeworks')
-        except IndexError:
-            logging.error('Список домашних работ пуст')
-            send_message(bot, 'Список домашних работ пуст')
-        except StatusException:
-            logging.error(f'Статус работы: {StatusException}')
-            send_message(bot, f'Статус работы: {StatusException}')
+                status = message
+        except Exception as error:
+            if Exception == ApiException:
+                logging.error(f'Ошибка при запросе к основному API: {error}')
+            elif Exception == ValueError:
+                logging.error('Ошибка парсинга ответа из формата json')
+            elif Exception == KeyError:
+                logging.error('Ошибка словаря по ключу homeworks')
+            elif Exception == IndexError:
+                logging.error('Список домашних работ пуст')
+            elif Exception == StatusException:
+                logging.error(f'Статус работы: {StatusException}')
+            elif Exception == telegram.error.TelegramError:
+                logging.error('Ошибка отправки сообщения в телеграм')
+            elif Exception == NotKnownException:
+                logging.error(f'Ошибка {NotKnownException}')
+            message_t = str(error)
+            if message_t != error_message:
+                send_message(bot, message_t)
+                error_message = message_t
         finally:
             time.sleep(RETRY_TIME)
 
