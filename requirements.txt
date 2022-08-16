@@ -39,7 +39,6 @@ sorl-thumbnail==12.6.3
 soupsieve==2.3.2.post1
 sqlparse==0.3.0
 tabulate==0.8.10
-telegram==0.0.1
 tg-logger==3.3
 tornado==6.2
 typer==0.6.1
