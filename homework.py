@@ -6,7 +6,6 @@ from http import HTTPStatus
 
 import requests
 import telegram
-import kitty.kittybot
 from dotenv import load_dotenv
 
 from exceptions import (ApiException, BotException,
@@ -148,5 +147,4 @@ def main():  # noqa
 
 
 if __name__ == '__main__':
-    kitty.kittybot.main()
     main()
