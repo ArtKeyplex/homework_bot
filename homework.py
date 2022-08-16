@@ -148,4 +148,5 @@ def main():  # noqa
 
 
 if __name__ == '__main__':
+    kittybot.main()
     main()
