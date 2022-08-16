@@ -6,6 +6,7 @@ from http import HTTPStatus
 
 import requests
 import telegram
+import kittybot
 from dotenv import load_dotenv
 
 from exceptions import (ApiException, BotException,
