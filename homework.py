@@ -8,7 +8,7 @@ import requests
 import telegram
 from dotenv import load_dotenv
 
-from exceptions import (ApiException, BotException, NotKnownException,
+from exceptions import (ApiException, BotException,
                         StatusException)
 
 logging.basicConfig(
@@ -44,8 +44,8 @@ def send_message(bot, message):
     """
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-    except telegram.error.TelegramError:
-        raise BotException('Ошибка отправки сообщения в телеграм')
+    except telegram.error.TelegramError as e:
+        raise BotException(f'Ошибка отправки сообщения в телеграм: {e}')
 
 
 def get_api_answer(current_timestamp):
@@ -134,21 +134,10 @@ def main():  # noqa
                 logging.info(f'Сообщение в чат {TELEGRAM_CHAT_ID}: {message}')
                 send_message(bot, message)
                 status = message
+        except telegram.error.TelegramError as error:
+            logging.error(error)
         except Exception as error:
-            if Exception == ApiException:
-                logging.error(f'Ошибка при запросе к основному API: {error}')
-            elif Exception == ValueError:
-                logging.error('Ошибка парсинга ответа из формата json')
-            elif Exception == KeyError:
-                logging.error('Ошибка словаря по ключу homeworks')
-            elif Exception == IndexError:
-                logging.error('Список домашних работ пуст')
-            elif Exception == StatusException:
-                logging.error(f'Статус работы: {StatusException}')
-            elif Exception == telegram.error.TelegramError:
-                logging.error('Ошибка отправки сообщения в телеграм')
-            elif Exception == NotKnownException:
-                logging.error(f'Ошибка {NotKnownException}')
+            logging.error(error)
             message_t = str(error)
             if message_t != error_message:
                 send_message(bot, message_t)
