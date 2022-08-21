@@ -6,7 +6,6 @@ beautifulsoup4==4.11.1
 cachetools==4.2.2
 certifi==2019.9.11
 chardet==3.0.4
-charset-normalizer==2.1.0
 click==8.1.3
 colorama==0.4.5
 contextlib2==21.6.0
@@ -39,7 +38,6 @@ sorl-thumbnail==12.6.3
 soupsieve==2.3.2.post1
 sqlparse==0.3.0
 tabulate==0.8.10
-telegram==0.0.1
 tg-logger==3.3
 tornado==6.2
 typer==0.6.1
